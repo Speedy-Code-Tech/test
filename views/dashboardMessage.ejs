@@ -1,0 +1,148 @@
+<%- include("./partials/dashboardHeader.ejs") %>
+
+<main>
+  <div class="container-fluid red-border-top">
+    <div class="row">
+      <!-- Inbox Section -->
+      <div
+        id="messages"
+        class="col-lg-3 bg-warning inbox-card d-flex flex-column align-items-center"
+        style="position: relative; overflow: auto; min-width: 400px"
+      >
+        <div class="" style="overflow: auto; height: 550px">
+          <p class="h4 text-center m-4">Inbox</p>
+          <% messages.forEach(item => { %>
+          <div
+            class="d-flex gap-2 justify-content-center align-items-center p-2 mt-2 inbox not-read"
+            data-sender-id="<%= item.sender_id %>"
+            onclick="views('<%= item.sender_id %>')"
+          >
+            <img src="/img/email-icon.png" alt="" />
+            <div class="text-card">
+              <p class="limited-text white-text bold"><%= item.message %></p>
+              <small class="light-text">1 hour ago</small>
+            </div>
+            <img src="/img/right-arrow.png" class="" alt="" />
+          </div>
+          <% }) %>
+        </div>
+        <div class="justify-self-end">
+          <a href=""><button class="btn text-white">Clear</button></a>
+        </div>
+      </div>
+
+      <!-- Chat Section -->
+      <div class="col message-box d-grid align-items-end">
+        <div class="chat-container">
+          <div
+            class="chat-header p-1 d-flex align-items-center justify-content-between px-3"
+          >
+            <div class="d-flex align-items-center gap-2">
+              <img
+                id="navProfilePicture"
+                src="https://avatarfiles.alphacoders.com/364/364538.png"
+                alt="profile"
+              />
+              <p>
+                Anonymous <span class="conversation-text">Conversation</span>
+              </p>
+            </div>
+            <a href=""><i class="fas fa-trash"></i></a>
+          </div>
+          <div class="chat-box">
+            <% conversation.forEach(msg => { %>
+              <div class="chat-bubble <%= msg.status === 'reply' ? 'outgoing' : 'incoming' %>">
+                <p><%= msg.message %></p>
+                <small class="timestamp"><%= new Date(msg.time).toLocaleString() %></small>
+              </div>
+            <% }) %>
+          </div>
+          
+          <div class="d-flex p-3">
+            <input
+              name="message"
+              type="text"
+              id="msg"
+              class="form-control me-2 users-message"
+              placeholder="Type a message..."
+            />
+            <input type="text" class="text-dark" name="receiver" id="receiver" />
+            <button onclick="submit()" class="btn p-0 m-0">
+              <img src="/img/send.png" alt="" width="45" />
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+const submit = async () => {
+  const msg = document.getElementById("msg").value;
+  const receiver = document.getElementById("receiver").value;
+
+  if (!msg.trim()) return; // Don't send empty messages
+
+  const response = await fetch("/sendMSG", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ receiver, message: msg }),
+  });
+
+  if (response.ok) {
+    const data = await response.json();
+
+    // Dynamically add the sent message to the chat box
+    const chatBox = document.querySelector(".chat-box");
+    const bubble = `
+      <div class="chat-bubble outgoing">
+        <p>${data.message}</p>
+        <small class="timestamp">${new Date(data.time).toLocaleString()}</small>
+      </div>
+    `;
+    chatBox.innerHTML += bubble;
+
+    // Clear the input field
+    document.getElementById("msg").value = "";
+
+    // Scroll to the bottom of the chat box
+    chatBox.scrollTop = chatBox.scrollHeight;
+  } else {
+    console.error("Failed to send message:", response.statusText);
+  }
+};
+
+const views = async (id) => {
+  const receiver = document.getElementById("receiver");
+  console.log(id)
+  receiver.value = id; // Set the receiver for future messages
+
+  const response = await fetch(`/message?view=${id}`);
+  if (response.ok) {
+    const data = await response.json();
+
+    // Clear the chat box and render new messages
+    const chatBox = document.querySelector(".chat-box");
+    chatBox.innerHTML = "";
+    data.forEach((msg) => {
+      const bubbleClass = msg.status === 'sent' ? "incoming" : "outgoing";
+      const bubble = `
+        <div class="chat-bubble ${bubbleClass}">
+          <p>${msg.message}</p>
+          <small class="timestamp">${new Date(msg.time).toLocaleString()}</small>
+        </div>
+      `;
+      chatBox.innerHTML += bubble;
+    });
+
+    // Scroll to the bottom of the chat
+    chatBox.scrollTop = chatBox.scrollHeight;
+  } else {
+    console.error("Error fetching messages:", response.statusText);
+  }
+};
+
+  </script>
+
+<%- include("./partials/dashboardFooter.ejs") %>
