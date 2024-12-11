@@ -26,6 +26,7 @@
             <form action="/login" method="post">
               <div class="mb-3">
                 <label for="username" class="form-label">Username</label>
+                <input type="hidden" name="user" value="<%= link?link:'' %>">
                 <input
                   type="text"
                   id="displayName"
@@ -53,7 +54,7 @@
               <div
                 class="container-fluid d-flex-justify-content-center align-items-center"
               >
-                <button class="login-btn mb-2 mt-3 text-white ">
+                <button class="login-btn mb-2 mt-3 text-white " type="submit">
                   Login
                 </button>
               </div>
@@ -113,11 +114,17 @@
         return {
           status: params.get("status"),
           msg: params.get("msg"),
+          redirectedTo: params.get("redirectedTo"),
         };
       }
 
       // Get the parameters
-      const { status, msg } = getQueryParams();
+      const { status, msg, redirectedTo } = getQueryParams();
+
+      // Store the redirectedTo in localStorage if it exists
+      if (redirectedTo) {
+        localStorage.setItem("redirectedTo", redirectedTo);
+      }
 
       // Display SweetAlert if status and msg are present
       if (status === "success" && msg) {
@@ -128,6 +135,16 @@
           confirmButtonText: "OK",
         });
       }
+
+      // If the user has a redirectedTo stored in localStorage, handle redirection after login
+      window.addEventListener("load", () => {
+        const storedRedirectedTo = localStorage.getItem("redirectedTo");
+        if (storedRedirectedTo) {
+          // Add any logic to handle this redirection after login
+          // You could set the value in a hidden form field or use this in the backend
+          console.log("Redirecting to stored URL:", storedRedirectedTo);
+        }
+      });
     </script>
   </body>
 </html>

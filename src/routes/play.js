@@ -20,15 +20,16 @@ app.get("/send", checkAuth, async (req, res) => {
   let sender_id = 0;
   for (const item of result.rows) {
     const hashedUser = await bcypt.compare(item.displayName, user);
-    if (hashedUser) receiver_id = item.id;
+    if (hashedUser) receiver_id = item.displayName;
 
-    if (item.displayName === req.user.displayName) sender_id = item.id;
+    if (item.displayName === req.user.displayName) sender_id = item.displayName;
 
-    if (receiver_id !== 0 && sender_id !== 0)
+    if (receiver_id && sender_id)
       console.log(receiver_id, sender_id);
   }
   const hashedUser = await bcypt.hash(req.user.displayName, 10);
-  if (receiver_id !== 0 && sender_id !== 0) {
+  
+  if (receiver_id && sender_id ) {    
     return res.render("anonymous.ejs", {
       user: req.user.displayName,
       url: `http://localhost:3000/send?user=${hashedUser}`,
@@ -52,31 +53,50 @@ app.get("/dashboard/message", checkAuth, async (req, res) => {
       break;
     }
   }
-  const inboxMessages = await pool.query(
-    `
-     SELECT DISTINCT ON (sender_id) sender_id, message, status, time 
-      FROM message 
-      WHERE receiver_id = $1 OR sender_id = $1
-      ORDER BY sender_id, id DESC
-    `,
-    [receiver_id   ]
+  const lowername = req.user.displayName.replace(/\s+/g, '').toLowerCase();
+
+  const inbox = await pool.query(
+    `SELECT DISTINCT ON (room) room, id, "displayName", message, created_at 
+     FROM messages 
+     WHERE room ILIKE '%' || $1 || '%'
+     ORDER BY room, created_at DESC`,
+    [lowername]
   );
-  const conversation = await pool.query(
-    `
-    SELECT * 
-    FROM message 
-    WHERE receiver_id = $1 OR sender_id = $1 
-    ORDER BY time ASC
-    `,
-    [receiver_id]
-  );
+  const messages = inbox.rows.map((row) => {
+    const createdAt = new Date(row.created_at);
+    const now = new Date();
+    const diffInHours = Math.floor((now - createdAt) / (1000 * 60 * 60));
+    return {
+      ...row,
+      timeAgo: diffInHours === 0 ? "Less than an hour ago" : `${diffInHours} hour(s) ago`,
+    };
+  });
+  
   return res.render("dashboardMessage.ejs", {
     user: req.user.displayName,
     url: `http://localhost:3000/send?user=${hashedUser}`,
-    messages: inboxMessages.rows,
-    conversation: conversation.rows,
-    
+    inbox: messages,
+    ownName: req.user.displayName
   });
+});
+
+app.get("/messages/:room", async (req, res) => {
+  const { room } = req.params;
+
+  try {
+    const result = await pool.query(
+      `SELECT "displayName", message, created_at
+       FROM messages
+       WHERE room = $1
+       ORDER BY created_at ASC`,
+      [room]
+    );
+
+    res.json(result.rows);
+  } catch (err) {
+    console.error("Error fetching messages:", err);
+    res.status(500).json({ error: "Failed to fetch messages" });
+  }
 });
 
 app.post("/reply", checkAuth, async (req, res) => {

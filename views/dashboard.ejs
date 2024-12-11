@@ -1,6 +1,8 @@
 <%- include("./partials/dashboardHeader.ejs") %>
+<style>
 
-<main>
+</style>
+<main id="loads">
   <div
     class="container-fluid red-border-top d-flex align-items-center pt-5 flex-column"
     style="height: 100vh"
@@ -11,12 +13,12 @@
     <div class="d-flex align-items-center gap-3 m-5">
       <p>Generated Link</p>
       <div class="d-flex align-items-center border border-1 url-container">
-        <div class="copy-btns red-box-icon border-end border-1 py-1 px-3">
+        <div class="copy-btns red-box-icon border-end border-1 py-1 px-3" style="cursor: pointer;">
           <img src="/img/paper-icon.png" alt="asdasd" />
         </div>
-        <div class="pe-2">
+        <div class="pe-2"  style="cursor: pointer;">
           <p
-            style="width: 300px; overflow-x: hidden; text-wrap: nowrap"
+            style="cursor: pointer; width: 300px; overflow-x: hidden; text-wrap: nowrap"
             class="px-3 links"
           >
             <%= url %>
@@ -26,7 +28,18 @@
     </div>
   </div>
 </main>
+<script>
+window.addEventListener("load", () => {
+  // Check if we have a value for redirection in localStorage
+  const redirectTo = localStorage.getItem('redirectedTo') || '/dashboard';
 
+  // Only redirect if 'redirectedTo' is actually set
+  if (redirectTo && window.location.pathname !== redirectTo) {
+    localStorage.removeItem('redirectedTo');  // Remove it after using it
+    window.location.href = redirectTo; // Perform the redirection
+  }
+});
+</script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
   // Copy Link Button Functionality

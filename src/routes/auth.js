@@ -25,7 +25,8 @@ app.get("/google", (req, res) => {
 
 app.get(
   "/auth/google",
-  passport.authenticate("google", { scope: ["profile", "email"] })
+  passport.authenticate("google", { scope: ["profile", "email"] }),
+  
 );
 
 app.get(
@@ -36,7 +37,7 @@ app.get(
       console.log(req.user);
       const { displayName } = req.user;
       const email = req.user.emails[0].value;
-
+      console.log("Google",req.url)
       const checkData = await pool.query(
         "SELECT * FROM users WHERE email = $1",
         [email]
@@ -51,7 +52,9 @@ app.get(
       }
 
       const redirectTo = req.session.redirectTo || "/dashboard"; // Default to dashboard
+      
       delete req.session.redirectTo; // Clear the session variable
+    
       res.redirect(redirectTo); // Redirect the user
     } catch (error) {
       console.error("Error in Google OAuth callback:", error.message);
@@ -66,7 +69,8 @@ app.get("/login", (req, res) => {
   if (req.query.redirectedTo) {
     link = req.query.redirectedTo;
   }
-  res.render("signin.ejs", { link: link });
+  // console.log(req.query.redirectedTo)
+  res.render("signin.ejs", { link: link});
 });
 
 app.post("/login", (req, res, next) => {
@@ -86,17 +90,30 @@ app.post("/login", (req, res, next) => {
         console.error("Login error:", loginErr.message);
         return res.status(500).send("Internal Server Error");
       }
-      console.log(req.body); // Optional logging
-      const redirectTo = "/dashboard"; // Default redirect
-      const queryEntries = Object.entries(req.query);
-      if (queryEntries.length > 0) {
-        const [, value] = queryEntries[0];
-        return res.redirect(`/send?user=${value}`);
+      console.log("QUERY", req.query);  // Log query parameters for debugging
+
+      // Default redirect
+      const redirectTo = "/dashboard"; 
+
+      // Check for the 'user' parameter in the query string
+      const { redirectedTo, user: userFromQuery } = req.query;
+      if (userFromQuery) {
+        // If 'user' parameter exists, redirect to '/send?user=' with the value
+        return res.redirect(`/send?user=${userFromQuery}`);
       }
-      return res.redirect(redirectTo);
+      if(req.body.user){
+        return res.redirect(req.body.user);
+
+      }else{
+        return res.redirect(redirectTo);
+
+      }
+      console.log(req.body)
+      // Otherwise, redirect to default route
     });
   })(req, res, next);
 });
+
 
 
 app.post("/signup", async (req, res) => {

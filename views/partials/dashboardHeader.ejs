@@ -64,11 +64,12 @@
               <div
                 class="d-flex align-items-center border border-1 url-container"
               >
-                <div class="red-box-icon border-end border-1 py-1 px-3">
+                <div class="red-box-icon border-end border-1 py-1 px-3" style="cursor: pointer;">
                   <img
                     class="copy-btn"
                     src="/img/paper-icon.png"
                     alt="asdasd"
+                    
                   />
                 </div>
                 <div>
@@ -152,18 +153,20 @@
               <div
                 class="d-flex justify-content-center align-items-center border border-1 rounded url-container"
               >
-                <div class="red-button border-end border-1 py-2 px-3 rounded">
+                <div class="red-button border-end border-1 py-2 px-3 rounded" style="cursor: pointer;">
                   <img
-                    class="copy-btn"
+                    class="copy-btnlast"
                     src="/img/paper-icon.png"
                     alt="asdasd"
+                    style="cursor: pointer;"
                   />
                 </div>
                 <div>
                   <p
-                    class="px-3 me-2 link"
+                    class="px-3 me-2 linklast"
                     style="width: 200px; overflow-x: hidden; text-wrap: nowrap"
                   >
+                  
                     <%= url%>
                   </p>
                 </div>
@@ -178,6 +181,33 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
+   let copybtnlast = document.querySelector(".copy-btnlast");
+   copybtnlast.addEventListener("click", function () {
+    const linklast = document.querySelector(".linklast").textContent;
+
+    navigator.clipboard
+      .writeText(linklast)
+      .then(() => {
+        // Use SweetAlert for success notification
+        Swal.fire({
+          icon: "success",
+          title: "Link Copied!",
+          text: "The link has been copied to your clipboard.",
+          timer: 2000, // Auto-close after 2 seconds
+          showConfirmButton: false,
+        });
+      })
+      .catch((err) => {
+        // Use SweetAlert for error notification
+        Swal.fire({
+          icon: "error",
+          title: "Failed to Copy",
+          text: "An error occurred while copying the link. Please try again.",
+        });
+        console.error("Error copying link:", err);
+      });
+  });
+
   let copylinks = document.querySelector(".copy-btn");
   copylinks.addEventListener("click", function () {
     const links = document.querySelector(".link").textContent;
